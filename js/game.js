@@ -4,7 +4,7 @@ let gameState = null;
 let currentAction = null;
 let selectedTokens = [];
 let activePlayerId = null;
-let myPlayerId = 0;  // Will be dynamically set from API response
+let myPlayerId = (typeof MY_PLAYER_ID !== 'undefined') ? parseInt(MY_PLAYER_ID) : 0;
 let winnerShown = false;
 
 const GEM_EMOJI = { white: '⚪', blue: '🔵', green: '🟢', red: '🔴', black: '⚫', gold: '🟡' };
@@ -26,8 +26,8 @@ function pollState() {
     $.getJSON('api/get_state.php', { game_id: GAME_ID }, function (res) {
         if (res.success) {
             // Always sync my player ID from server session
-            if (res.data.my_player_id && res.data.my_player_id > 0) {
-                myPlayerId = res.data.my_player_id;
+            if (res.data.my_player_id && parseInt(res.data.my_player_id) > 0) {
+                myPlayerId = parseInt(res.data.my_player_id);
             }
             let stateChanged = JSON.stringify(gameState) !== JSON.stringify(res.data);
             if (stateChanged) {
@@ -87,9 +87,9 @@ function renderBoard(data) {
     $('#tokens-bank').html(tokensHtml);
 
     // Turn Indicator
-    const turnPlayer = data.players.find(p => p.id === board.turn_player_id);
+    const turnPlayer = data.players.find(p => parseInt(p.id) === parseInt(board.turn_player_id));
     if (turnPlayer) {
-        const isMyTurn = myPlayerId === 0 || board.turn_player_id === myPlayerId;
+        const isMyTurn = myPlayerId === 0 || parseInt(board.turn_player_id) === parseInt(myPlayerId);
         $('#turnIndicator').html(`
             ${isMyTurn ? '<i class="bi bi-hand-index-fill me-1"></i>' : '<i class="bi bi-hourglass-split me-1"></i>'}
             ${isMyTurn ? '🎯 ตาของคุณ' : `⏳ ตาของ <strong>${turnPlayer.name}</strong>`}
@@ -119,11 +119,11 @@ function generateCardHtml(c) {
 // ===================== Players Rendering =====================
 function renderPlayers(data) {
     const turnPlayerId = data.game.turn_player_id;
-    activePlayerId = turnPlayerId;
+    activePlayerId = parseInt(turnPlayerId);
     let playersHtml = '';
 
     data.players.forEach((p, idx) => {
-        const isActive = p.id === turnPlayerId;
+        const isActive = parseInt(p.id) === parseInt(turnPlayerId);
         const totalTokens = Object.values(p.tokens_owned || {}).reduce((a, b) => a + b, 0);
 
         // Gems display
@@ -195,7 +195,7 @@ function renderPlayers(data) {
 
 // ===================== Token Actions =====================
 function handleTokenClick(color) {
-    if (myPlayerId !== 0 && activePlayerId !== myPlayerId) {
+    if (parseInt(myPlayerId) !== 0 && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }
@@ -268,7 +268,7 @@ function confirmTokens() {
 
 // ===================== Card Actions =====================
 function handleCardClick(cardId, level) {
-    if (myPlayerId !== 0 && activePlayerId !== myPlayerId) {
+    if (parseInt(myPlayerId) !== 0 && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }
@@ -285,7 +285,7 @@ function handleCardClick(cardId, level) {
 }
 
 function handleReservedCardClick(cardId) {
-    if (myPlayerId !== 0 && activePlayerId !== myPlayerId) {
+    if (parseInt(myPlayerId) !== 0 && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }
