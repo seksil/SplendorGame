@@ -219,6 +219,20 @@ function renderPlayers(data) {
             reservedHtml += `</div></div>`;
         }
 
+        // Owned Nobles
+        let noblesOwnedHtml = '';
+        if (p.nobles_owned && p.nobles_owned.length > 0) {
+            noblesOwnedHtml = `<div class="mt-2 pt-2" style="border-top: 1px solid var(--border-subtle);">
+                <small class="text-gold d-block mb-1"><i class="bi bi-person-badge-fill me-1"></i>ขุนนางที่ครอบครอง</small>
+                <div class="d-flex gap-1 flex-wrap">`;
+            p.nobles_owned.forEach(n => {
+                noblesOwnedHtml += `<div class="reserved-mini" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); cursor:default;" title="ได้รับ 3 คะแนน">
+                    <span class="text-gold fw-bold fs-6">👑</span>
+                </div>`;
+            });
+            noblesOwnedHtml += `</div></div>`;
+        }
+
         const winnerBadge = p.score >= 15 ? '<span class="badge bg-success ms-1 anim-pop" style="font-size:0.65rem;">🏆 ชนะ!</span>' : '';
 
         playersHtml += `<div class="player-tag ${isActive ? 'active-player' : ''}">
@@ -240,6 +254,7 @@ function renderPlayers(data) {
             </div>
             <div class="d-flex gap-1 flex-wrap">${gemsHtml}</div>
             ${reservedHtml}
+            ${noblesOwnedHtml}
         </div>`;
     });
 
