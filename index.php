@@ -368,7 +368,8 @@ require 'config.php';
                             </div>
                         </div>
                         <div class="mt-3">
-                            <table class="table table-sm table-borderless mb-0" style="color: var(--text-secondary);">
+                            <table class="table table-sm table-borderless mb-0"
+                                style="color: var(--text-secondary); --bs-table-bg: transparent; --bs-table-color: var(--text-secondary);">
                                 <thead>
                                     <tr style="border-bottom: 1px solid var(--border-subtle);">
                                         <th class="text-gold">จำนวนคน</th>
