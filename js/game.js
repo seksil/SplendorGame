@@ -438,6 +438,16 @@ function showGameEndOverlay(playerName) {
     setTimeout(() => { window.location.href = 'index.php'; }, 4000);
 }
 
+// ===================== Leave Game =====================
+function leaveGame() {
+    if (!confirm('ออกจากเกม?')) return;
+    $.post('api/leave_game.php', { game_id: GAME_ID }, function () {
+        window.location.href = 'index.php';
+    }).fail(function () {
+        window.location.href = 'index.php';
+    });
+}
+
 // ===================== Init =====================
 $(document).ready(function () {
     pollState();

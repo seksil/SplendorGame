@@ -202,8 +202,7 @@ if ($game_id <= 0) {
             <div class="players-scroll" id="players-list"></div>
 
             <div class="mt-2 pt-2" style="border-top: 1px solid var(--border-subtle);">
-                <button class="btn-ruby w-100 py-2"
-                    onclick="if(confirm('ออกจากเกม?')) window.location.href='index.php'">
+                <button class="btn-ruby w-100 py-2" onclick="leaveGame()">
                     <i class="bi bi-box-arrow-left me-1"></i> ออกจากเกม
                 </button>
             </div>
