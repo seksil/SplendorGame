@@ -27,6 +27,14 @@ try {
     $game['board_nobles'] = json_decode($game['board_nobles'], true);
 
     // We don't send the full remaining decks to frontend to prevent cheating or large payload
+    // Instead we send the count so the UI knows if the deck is empty for blind reserves
+    $deck_counts = [];
+    if (isset($game['board_cards']['decks'])) {
+        foreach ($game['board_cards']['decks'] as $lvl => $deck) {
+            $deck_counts[$lvl] = count($deck);
+        }
+    }
+    $game['board_cards']['deck_counts'] = $deck_counts;
     unset($game['board_cards']['decks']);
 
     // Get all players
@@ -38,11 +46,25 @@ try {
         $player['tokens_owned'] = json_decode($player['tokens_owned'], true);
         $player['cards_owned'] = json_decode($player['cards_owned'], true);
 
-        // Hide actual reserved cards from other players (only return count)
-        $reserved = json_decode($player['cards_reserved'], true);
+        // Obfuscate actual reserved cards from other players if they are blind reserved
+        $reserved = json_decode($player['cards_reserved'], true) ?: [];
         $player['reserved_count'] = count($reserved);
-        // $player['cards_reserved'] will remain the full array, we will filter it based on who is asking later if needed,
-        // but since this is local multiplayer, we pass the full array for the active player UI to render.
+
+        $my_player_id = isset($_SESSION['player_id']) ? intval($_SESSION['player_id']) : 0;
+        $is_my_player = ($player['id'] == $my_player_id);
+
+        if (!$is_my_player) {
+            foreach ($reserved as &$rc) {
+                if (isset($rc['is_blind']) && $rc['is_blind']) {
+                    // Hide sensitive data, only expose level
+                    $rc = [
+                        'id' => 'hidden',
+                        'level' => $rc['level'],
+                        'is_blind' => true
+                    ];
+                }
+            }
+        }
         $player['cards_reserved'] = $reserved;
 
         $player['nobles_owned'] = json_decode($player['nobles_owned'], true);

@@ -92,9 +92,11 @@ function renderBoard(data) {
 
     // Cards
     ['3', '2', '1'].forEach(level => {
-        let rowHtml = `<div class="deck-indicator">
+        const count = board.board_cards.deck_counts[level] || 0;
+        let rowHtml = `<div class="deck-indicator ${count > 0 ? 'anim-pop' : ''}" 
+            ${count > 0 ? `onclick="handleDeckClick(${level})" style="cursor:pointer;" title="จองการ์ดจากกอง"` : `style="cursor:not-allowed; opacity: 0.5;" title="กองนี้หมดแล้ว"`}>
             <div class="level-num">${level}</div>
-            <small>Lv.</small>
+            <small>Lv. (${count})</small>
         </div>`;
         board.board_cards['level_' + level].forEach(c => {
             rowHtml += generateCardHtml(c);
@@ -178,26 +180,41 @@ function renderPlayers(data) {
 
         // Reserved cards
         let reservedHtml = '';
-        if (isActive && p.cards_reserved && p.cards_reserved.length > 0) {
+        if (p.cards_reserved && p.cards_reserved.length > 0) {
             reservedHtml = `<div class="mt-2 pt-2" style="border-top: 1px solid var(--border-subtle);">
                 <small class="text-gold d-block mb-1"><i class="bi bi-bookmark-fill me-1"></i>การ์ดจอง</small>
                 <div class="d-flex gap-1 flex-wrap">`;
             p.cards_reserved.forEach(rc => {
-                let rcCost = '';
-                for (let color in rc.cost) {
-                    if (rc.cost[color] > 0) {
-                        rcCost += `<div class="d-flex align-items-center gap-1">
-                            <div class="rm-cost-dot token-${color}">${rc.cost[color]}</div>
-                        </div>`;
+                const isMyReserve = parseInt(p.id) === parseInt(myPlayerId);
+                const canClick = isMyReserve && isActive && parseInt(myPlayerId) === parseInt(activePlayerId);
+
+                if (rc.is_blind && rc.id === 'hidden') {
+                    // Render card back for opponent's blind reserve
+                    reservedHtml += `<div class="reserved-mini" style="background:var(--card-bg-dark); color:var(--text-secondary); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:default; border-color: rgba(255,255,255,0.1);" title="การ์ดความลับ">
+                        <span class="fw-bold fs-6">${rc.level}</span>
+                        <small style="font-size:0.5rem;">Lv.</small>
+                    </div>`;
+                } else {
+                    let rcCost = '';
+                    for (let color in rc.cost) {
+                        if (rc.cost[color] > 0) {
+                            rcCost += `<div class="d-flex align-items-center gap-1">
+                                <div class="rm-cost-dot token-${color}">${rc.cost[color]}</div>
+                            </div>`;
+                        }
                     }
+                    const clickAttr = canClick ? `onclick="handleReservedCardClick(${rc.id})"` : '';
+                    const cursor = canClick ? 'cursor:pointer;' : 'cursor:default;';
+                    const borderStyle = rc.is_blind ? `border: 1px dashed rgba(245,158,11,0.6);` : '';
+
+                    reservedHtml += `<div class="reserved-mini" ${clickAttr} style="${cursor} ${borderStyle}" title="${rc.is_blind ? 'จองจากกอง (คู่แข่งไม่เห็น)' : 'จองจากกระดาน'}">
+                        <div class="rm-header">
+                            <span class="text-gold fw-bold">${rc.points > 0 ? rc.points : ''}</span>
+                            <span>${GEM_EMOJI[rc.gem]}</span>
+                        </div>
+                        <div class="rm-costs">${rcCost}</div>
+                    </div>`;
                 }
-                reservedHtml += `<div class="reserved-mini" onclick="handleReservedCardClick(${rc.id})">
-                    <div class="rm-header">
-                        <span class="text-gold fw-bold">${rc.points > 0 ? rc.points : ''}</span>
-                        <span>${GEM_EMOJI[rc.gem]}</span>
-                    </div>
-                    <div class="rm-costs">${rcCost}</div>
-                </div>`;
             });
             reservedHtml += `</div></div>`;
         }
@@ -305,6 +322,52 @@ function confirmTokens() {
 }
 
 // ===================== Card Actions =====================
+function handleDeckClick(level) {
+    if (parseInt(myPlayerId) !== 0 && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
+        showToast('ยังไม่ถึงตาคุณ!', 'warning');
+        return;
+    }
+
+    const count = gameState.game.board_cards.deck_counts[level];
+    if (count <= 0) {
+        showToast('กองนี้หมดแล้ว!', 'warning');
+        return;
+    }
+
+    if (typeof SoundEngine !== 'undefined') SoundEngine.click();
+    $('#action-panel').slideDown(200);
+    $('#action-info').html(`จองการ์ดจากกอง Level ${level} (ความลับ)`);
+    $('#action-buttons').html(`
+        <button class="btn-crystal btn-sm" style="padding: 8px 16px;" onclick="reserveFromDeck(${level})">
+            <i class="bi bi-bookmark-plus me-1"></i> ยืนยันจอง Lv.${level}
+        </button>
+    `);
+}
+
+function reserveFromDeck(level) {
+    const btn = $('#action-buttons button');
+    btn.prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i> กำลังจอง...');
+
+    $.post('api/reserve_card.php', {
+        game_id: GAME_ID,
+        player_id: activePlayerId,
+        deck_level: level
+    }, function (res) {
+        if (res.success) {
+            if (typeof SoundEngine !== 'undefined') SoundEngine.cardReserve();
+            if (res.data && res.data.got_gold) {
+                showToast(`จองการ์ดความลับ Lv.${level} สำเร็จ! ได้รับ 🟡 Gold Token 1 เหรียญ`, 'success');
+            } else {
+                showToast(`จองการ์ดความลับ Lv.${level} สำเร็จ! (ไม่มี Gold หรือ Token เต็ม)`, 'info');
+            }
+            cancelAction();
+            pollState();
+        } else {
+            showToast(res.message, 'error');
+            btn.prop('disabled', false).html(`<i class="bi bi-bookmark-plus me-1"></i> ยืนยันจอง Lv.${level}`);
+        }
+    }, 'json');
+}
 function handleCardClick(cardId, level) {
     if (parseInt(myPlayerId) !== 0 && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');

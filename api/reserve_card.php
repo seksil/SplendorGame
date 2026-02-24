@@ -8,7 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $game_id = intval($_POST['game_id']);
 $player_id = intval($_POST['player_id']);
-$card_id = intval($_POST['card_id']);
+$card_id = isset($_POST['card_id']) ? intval($_POST['card_id']) : 0;
+$deck_level = isset($_POST['deck_level']) ? intval($_POST['deck_level']) : 0;
+
+if ($card_id <= 0 && $deck_level <= 0) {
+    jsonResponse(false, [], 'Must provide card_id or deck_level');
+}
 
 try {
     $pdo->beginTransaction();
@@ -33,30 +38,41 @@ try {
 
     $board_cards = json_decode($game['board_cards'], true);
     $cardToReserve = null;
-    $cardLevelForReplacement = null;
-    $cardIndexOnBoard = null;
 
-    foreach (['1', '2', '3'] as $level) {
-        foreach ($board_cards['level_' . $level] as $i => $c) {
-            if ($c['id'] == $card_id) {
-                $cardToReserve = $c;
-                $cardLevelForReplacement = $level;
-                $cardIndexOnBoard = $i;
-                break 2;
+    if ($deck_level > 0) {
+        // Blind draw from deck
+        if (!isset($board_cards['decks'][$deck_level]) || count($board_cards['decks'][$deck_level]) == 0) {
+            throw new Exception("Deck level {$deck_level} is empty.");
+        }
+        $cardToReserve = array_shift($board_cards['decks'][$deck_level]);
+        $cardToReserve['is_blind'] = true; // Tag for visibility logic
+    } else {
+        // Face-up reserve from board
+        $cardLevelForReplacement = null;
+        $cardIndexOnBoard = null;
+
+        foreach (['1', '2', '3'] as $level) {
+            foreach ($board_cards['level_' . $level] as $i => $c) {
+                if ($c['id'] == $card_id) {
+                    $cardToReserve = $c;
+                    $cardLevelForReplacement = $level;
+                    $cardIndexOnBoard = $i;
+                    break 2;
+                }
             }
         }
-    }
 
-    if (!$cardToReserve)
-        throw new Exception("Card not found on the board.");
+        if (!$cardToReserve)
+            throw new Exception("Card not found on the board.");
 
-    // Remove from board
-    array_splice($board_cards['level_' . $cardLevelForReplacement], $cardIndexOnBoard, 1);
+        // Remove from board
+        array_splice($board_cards['level_' . $cardLevelForReplacement], $cardIndexOnBoard, 1);
 
-    // Replace if deck not empty
-    if (count($board_cards['decks'][$cardLevelForReplacement]) > 0) {
-        $new_card = array_shift($board_cards['decks'][$cardLevelForReplacement]);
-        $board_cards['level_' . $cardLevelForReplacement][] = $new_card;
+        // Replace if deck not empty
+        if (count($board_cards['decks'][$cardLevelForReplacement]) > 0) {
+            $new_card = array_shift($board_cards['decks'][$cardLevelForReplacement]);
+            $board_cards['level_' . $cardLevelForReplacement][] = $new_card;
+        }
     }
 
     // Add to reserved
