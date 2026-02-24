@@ -6,6 +6,7 @@ let selectedTokens = [];
 let activePlayerId = null;
 let myPlayerId = (typeof MY_PLAYER_ID !== 'undefined') ? parseInt(MY_PLAYER_ID) : 0;
 let winnerShown = false;
+let knownPlayerNames = {};
 
 const GEM_EMOJI = { white: '⚪', blue: '🔵', green: '🟢', red: '🔴', black: '⚫', gold: '🟡' };
 const GEM_LABEL = { white: 'เพชร', blue: 'ไพลิน', green: 'มรกต', red: 'ทับทิม', black: 'นิล', gold: 'ทอง' };
@@ -29,6 +30,21 @@ function pollState() {
             if (res.data.my_player_id && parseInt(res.data.my_player_id) > 0) {
                 myPlayerId = parseInt(res.data.my_player_id);
             }
+
+            // Track player changes
+            if (res.data.players) {
+                const currentIds = {};
+                res.data.players.forEach(p => { currentIds[p.id] = p.name; });
+
+                // Check for players who left
+                for (let id in knownPlayerNames) {
+                    if (!currentIds[id]) {
+                        showToast(`⚠️ ${knownPlayerNames[id]} ออกจากเกมแล้ว`, 'warning');
+                    }
+                }
+                knownPlayerNames = currentIds;
+            }
+
             let stateChanged = JSON.stringify(gameState) !== JSON.stringify(res.data);
             if (stateChanged) {
                 gameState = res.data;
