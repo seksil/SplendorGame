@@ -13,6 +13,9 @@ const SoundEngine = (() => {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
         return audioCtx;
     }
 
@@ -172,7 +175,7 @@ const SoundEngine = (() => {
         if (!musicEnabled || bgmPlaying) return;
         const ctx = getCtx();
         bgmGain = ctx.createGain();
-        bgmGain.gain.value = 0.03;
+        bgmGain.gain.setValueAtTime(0.15, ctx.currentTime); // Master BGM Volume
         bgmGain.connect(ctx.destination);
 
         const chords = [
@@ -186,19 +189,25 @@ const SoundEngine = (() => {
         function playChord() {
             if (!bgmPlaying) return;
             const chord = chords[chordIdx % chords.length];
-            chord.forEach(freq => {
+            const now = getCtx().currentTime;
+
+            chord.forEach((freq, i) => {
                 const osc = ctx.createOscillator();
                 const g = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.value = freq;
-                g.gain.setValueAtTime(0.03, ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.5);
+                osc.frequency.setValueAtTime(freq, now);
+
+                // Volume envelope for each note
+                g.gain.setValueAtTime(0, now);
+                g.gain.linearRampToValueAtTime(0.08, now + 0.5); // Fade in
+                g.gain.exponentialRampToValueAtTime(0.001, now + 3.5); // Fade out
+
                 osc.connect(g).connect(bgmGain);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 3.8);
+                osc.start(now);
+                osc.stop(now + 4.0);
             });
             chordIdx++;
-            setTimeout(playChord, 4000);
+            setTimeout(playChord, 3800); // Trigger next chord just before current ends
         }
 
         bgmPlaying = true;
