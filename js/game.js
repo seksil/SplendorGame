@@ -4,6 +4,7 @@ let gameState = null;
 let currentAction = null;
 let selectedTokens = [];
 let activePlayerId = null;
+let myPlayerId = 0;  // Will be dynamically set from API response
 let winnerShown = false;
 
 const GEM_EMOJI = { white: '⚪', blue: '🔵', green: '🟢', red: '🔴', black: '⚫', gold: '🟡' };
@@ -24,6 +25,10 @@ function showToast(msg, type = 'info') {
 function pollState() {
     $.getJSON('api/get_state.php', { game_id: GAME_ID }, function (res) {
         if (res.success) {
+            // Always sync my player ID from server session
+            if (res.data.my_player_id && res.data.my_player_id > 0) {
+                myPlayerId = res.data.my_player_id;
+            }
             let stateChanged = JSON.stringify(gameState) !== JSON.stringify(res.data);
             if (stateChanged) {
                 gameState = res.data;
@@ -84,7 +89,7 @@ function renderBoard(data) {
     // Turn Indicator
     const turnPlayer = data.players.find(p => p.id === board.turn_player_id);
     if (turnPlayer) {
-        const isMyTurn = MY_PLAYER_ID === 0 || board.turn_player_id === MY_PLAYER_ID;
+        const isMyTurn = myPlayerId === 0 || board.turn_player_id === myPlayerId;
         $('#turnIndicator').html(`
             ${isMyTurn ? '<i class="bi bi-hand-index-fill me-1"></i>' : '<i class="bi bi-hourglass-split me-1"></i>'}
             ${isMyTurn ? '🎯 ตาของคุณ' : `⏳ ตาของ <strong>${turnPlayer.name}</strong>`}
@@ -190,7 +195,7 @@ function renderPlayers(data) {
 
 // ===================== Token Actions =====================
 function handleTokenClick(color) {
-    if (MY_PLAYER_ID !== 0 && activePlayerId !== MY_PLAYER_ID) {
+    if (myPlayerId !== 0 && activePlayerId !== myPlayerId) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }
@@ -263,7 +268,7 @@ function confirmTokens() {
 
 // ===================== Card Actions =====================
 function handleCardClick(cardId, level) {
-    if (MY_PLAYER_ID !== 0 && activePlayerId !== MY_PLAYER_ID) {
+    if (myPlayerId !== 0 && activePlayerId !== myPlayerId) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }
@@ -280,7 +285,7 @@ function handleCardClick(cardId, level) {
 }
 
 function handleReservedCardClick(cardId) {
-    if (MY_PLAYER_ID !== 0 && activePlayerId !== MY_PLAYER_ID) {
+    if (myPlayerId !== 0 && activePlayerId !== myPlayerId) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }

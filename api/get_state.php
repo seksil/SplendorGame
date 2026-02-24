@@ -50,7 +50,8 @@ try {
 
     jsonResponse(true, [
         'game' => $game,
-        'players' => $players
+        'players' => $players,
+        'my_player_id' => isset($_SESSION['player_id']) ? intval($_SESSION['player_id']) : 0
     ], 'Game state retrieved');
 
 } catch (Exception $e) {
