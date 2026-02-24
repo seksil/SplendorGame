@@ -202,6 +202,16 @@ if ($game_id <= 0) {
             <div class="players-scroll" id="players-list"></div>
 
             <div class="mt-2 pt-2" style="border-top: 1px solid var(--border-subtle);">
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn-crystal flex-fill py-1" onclick="toggleBGM(this)"
+                        style="font-size:0.8rem; padding: 5px;">
+                        <i class="bi bi-music-note-beamed me-1"></i> <span>เพลง: เปิด</span>
+                    </button>
+                    <button class="btn-crystal flex-fill py-1" onclick="toggleSFX(this)"
+                        style="font-size:0.8rem; padding: 5px;">
+                        <i class="bi bi-volume-up me-1"></i> <span>เสียง: เปิด</span>
+                    </button>
+                </div>
                 <button class="btn-ruby w-100 py-2" onclick="leaveGame()">
                     <i class="bi bi-box-arrow-left me-1"></i> ออกจากเกม
                 </button>
@@ -218,7 +228,20 @@ if ($game_id <= 0) {
         const GAME_ID = <?php echo $game_id; ?>;
         const MY_PLAYER_ID = <?php echo isset($_SESSION['player_id']) ? $_SESSION['player_id'] : 0; ?>;
     </script>
+    <script src="js/sounds.js"></script>
     <script src="js/game.js"></script>
+    <script>
+        function toggleBGM(btn) {
+            const on = SoundEngine.toggleMusic();
+            btn.querySelector('span').textContent = 'เพลง: ' + (on ? 'เปิด' : 'ปิด');
+            btn.querySelector('i').className = 'bi ' + (on ? 'bi-music-note-beamed' : 'bi-music-note') + ' me-1';
+        }
+        function toggleSFX(btn) {
+            const on = SoundEngine.toggleSFX();
+            btn.querySelector('span').textContent = 'เสียง: ' + (on ? 'เปิด' : 'ปิด');
+            btn.querySelector('i').className = 'bi ' + (on ? 'bi-volume-up' : 'bi-volume-mute') + ' me-1';
+        }
+    </script>
 </body>
 
 </html>

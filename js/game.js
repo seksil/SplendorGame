@@ -20,6 +20,11 @@ function showToast(msg, type = 'info') {
     toast.innerHTML = `<i class="bi ${icons[type] || icons.info}"></i> ${msg}`;
     document.getElementById('toastContainer').appendChild(toast);
     setTimeout(() => { toast.classList.add('toast-out'); setTimeout(() => toast.remove(), 300); }, 3500);
+    // Play sound based on toast type
+    if (typeof SoundEngine !== 'undefined') {
+        if (type === 'error') SoundEngine.error();
+        else if (type === 'warning') SoundEngine.error();
+    }
 }
 
 // ===================== Polling =====================
@@ -44,6 +49,7 @@ function pollState() {
                         leftName = knownPlayerNames[id];
                         someoneLeft = true;
                         showToast(`⚠️ ${leftName} ออกจากเกมแล้ว`, 'warning');
+                        if (typeof SoundEngine !== 'undefined') SoundEngine.playerLeft();
                     }
                 }
                 knownPlayerNames = currentIds;
@@ -116,6 +122,10 @@ function renderBoard(data) {
     const turnPlayer = data.players.find(p => parseInt(p.id) === parseInt(board.turn_player_id));
     if (turnPlayer) {
         const isMyTurn = myPlayerId === 0 || parseInt(board.turn_player_id) === parseInt(myPlayerId);
+        // Play sound on turn change
+        if (isMyTurn && activePlayerId !== null && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
+            if (typeof SoundEngine !== 'undefined') SoundEngine.yourTurn();
+        }
         $('#turnIndicator').html(`
             ${isMyTurn ? '<i class="bi bi-hand-index-fill me-1"></i>' : '<i class="bi bi-hourglass-split me-1"></i>'}
             ${isMyTurn ? '🎯 ตาของคุณ' : `⏳ ตาของ <strong>${turnPlayer.name}</strong>`}
@@ -257,6 +267,7 @@ function handleTokenClick(color) {
     }
 
     selectedTokens.push(color);
+    if (typeof SoundEngine !== 'undefined') SoundEngine.tokenPickup();
 
     // Re-render tokens to show selection
     renderBoard(gameState);
@@ -283,6 +294,7 @@ function confirmTokens() {
     }, function (res) {
         if (res.success) {
             showToast(`หยิบ ${selectedTokens.map(c => GEM_EMOJI[c]).join(' ')} สำเร็จ!`, 'success');
+            if (typeof SoundEngine !== 'undefined') SoundEngine.tokenPickup();
             cancelAction();
             pollState();
         } else {
@@ -298,6 +310,7 @@ function handleCardClick(cardId, level) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
         return;
     }
+    if (typeof SoundEngine !== 'undefined') SoundEngine.click();
     $('#action-panel').slideDown(200);
     $('#action-info').html('เลือกการ์ด');
     $('#action-buttons').html(`
@@ -340,6 +353,7 @@ function buyCard(cardId, is_reserved) {
     }, function (res) {
         if (res.success) {
             showToast('ซื้อการ์ดสำเร็จ! 🎉', 'success');
+            if (typeof SoundEngine !== 'undefined') SoundEngine.cardBuy();
             if (res.data && res.data.noble_acquired) {
                 setTimeout(() => showToast('👑 ขุนนางมาเยี่ยมคุณ! +3 คะแนน', 'warning'), 800);
             }
@@ -358,6 +372,7 @@ function reserveCard(cardId) {
         card_id: cardId
     }, function (res) {
         if (res.success) {
+            if (typeof SoundEngine !== 'undefined') SoundEngine.cardReserve();
             if (res.data && res.data.got_gold) {
                 showToast('จองการ์ดสำเร็จ! ได้รับ 🟡 Gold Token 1 เหรียญ', 'success');
             } else {
@@ -382,6 +397,7 @@ function checkWinner(data) {
 }
 
 function showWinnerCelebration(winner) {
+    if (typeof SoundEngine !== 'undefined') SoundEngine.winFanfare();
     // Confetti
     for (let i = 0; i < 60; i++) {
         const confetti = document.createElement('div');
@@ -452,4 +468,8 @@ function leaveGame() {
 $(document).ready(function () {
     pollState();
     setInterval(pollState, 2000);
+    // Start background music after first interaction
+    $(document).one('click', function () {
+        if (typeof SoundEngine !== 'undefined') SoundEngine.startBGM();
+    });
 });
