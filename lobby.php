@@ -182,6 +182,7 @@ if ($player_id == 0) {
 
         const avatarColors = ['var(--gem-blue)', 'var(--gem-green)', 'var(--gem-red)', 'var(--gem-gold)'];
         const gemEmojis = ['💎', '🟢', '🔴', '🟡'];
+        let gameStarting = false;
 
         function showToast(msg, type = 'info') {
             const toast = document.createElement('div');
@@ -204,7 +205,15 @@ if ($player_id == 0) {
             $.getJSON('api/lobby_state.php', { room_code: ROOM_CODE }, function (res) {
                 if (res.success) {
                     if (res.data.game.status === 'active') {
-                        window.location.href = 'game.php?id=' + res.data.game.id;
+                        if (!gameStarting) {
+                            gameStarting = true;
+                            // Non-host player: show the reveal animation then redirect
+                            showTurnReveal(
+                                res.data.player_order || [],
+                                res.data.first_player || '???',
+                                res.data.game.id
+                            );
+                        }
                         return;
                     }
 
@@ -272,17 +281,127 @@ if ($player_id == 0) {
 
         function startGame() {
             const btn = $('#startBtn');
-            btn.prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i> กำลังเริ่ม...');
+            btn.prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i> กำลังสุ่มลำดับ...');
+            gameStarting = true;
 
             $.post('api/start_room.php', { room_code: ROOM_CODE }, function (res) {
                 if (res.success) {
-                    showToast('เริ่มเกม!', 'success');
-                    window.location.href = 'game.php?id=' + res.data.game_id;
+                    showTurnReveal(
+                        res.data.player_order || [],
+                        res.data.first_player || '???',
+                        res.data.game_id
+                    );
                 } else {
                     showToast(res.message, 'error');
+                    gameStarting = false;
                     btn.prop('disabled', false).html('<i class="bi bi-play-fill me-1"></i> เริ่มเกม');
                 }
             }, 'json');
+        }
+
+        // ========== TURN ORDER REVEAL ANIMATION ==========
+        function showTurnReveal(playerOrder, firstPlayer, gameId) {
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'turnRevealOverlay';
+            overlay.style.cssText = `
+                position: fixed; inset: 0; z-index: 9999;
+                background: rgba(0, 0, 0, 0.92);
+                display: flex; align-items: center; justify-content: center;
+                animation: fadeIn 0.4s ease-out;
+            `;
+
+            overlay.innerHTML = `
+                <div style="text-align: center; max-width: 400px; width: 90%;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🎲</div>
+                    <h3 style="Letter-spacing: 3px; color: var(--text-gold); font-family: 'Cinzel', serif; margin-bottom: 25px;">
+                        สุ่มลำดับผู้เล่น
+                    </h3>
+                    <div id="spinContainer" style="
+                        background: rgba(255,255,255,0.06); border: 2px solid rgba(245,158,11,0.3);
+                        border-radius: 16px; padding: 20px; margin-bottom: 25px;
+                        overflow: hidden; height: 70px; position: relative;
+                    ">
+                        <div id="spinNames" style="
+                            position: absolute; width: 100%;
+                            transition: transform 0.1s ease;
+                            font-size: 1.5rem; font-weight: 700; color: #fff;
+                        "></div>
+                    </div>
+                    <div id="revealResult" style="display: none;">
+                        <div style="
+                            background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(0,0,0,0.5));
+                            border: 2px solid rgba(245,158,11,0.5); border-radius: 16px;
+                            padding: 20px; margin-bottom: 20px;
+                        ">
+                            <div style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 8px;">
+                                🏆 ผู้เล่นคนแรก
+                            </div>
+                            <div id="winnerName" style="
+                                font-size: 2rem; font-weight: 800; color: var(--text-gold);
+                                font-family: 'Cinzel', serif; text-shadow: 0 0 20px rgba(245,158,11,0.4);
+                            "></div>
+                        </div>
+                        <div id="orderList" style="
+                            font-size: 0.9rem; color: var(--text-secondary);
+                            margin-bottom: 20px;
+                        "></div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            <i class="bi bi-arrow-right-circle me-1"></i>
+                            กำลังเข้าสู่เกม<span class="waiting-dots"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Spinning animation
+            const spinEl = document.getElementById('spinNames');
+            const names = playerOrder.length > 0 ? playerOrder : ['???'];
+            let spinIndex = 0;
+            let spinSpeed = 80;
+            let spins = 0;
+            const totalSpins = 25 + Math.floor(Math.random() * 10);
+
+            function doSpin() {
+                spinEl.textContent = names[spinIndex % names.length];
+                spinIndex++;
+                spins++;
+
+                if (spins < totalSpins) {
+                    // Slow down gradually
+                    if (spins > totalSpins - 10) spinSpeed += 30;
+                    else if (spins > totalSpins - 5) spinSpeed += 60;
+                    setTimeout(doSpin, spinSpeed);
+                } else {
+                    // Reveal result!
+                    spinEl.textContent = firstPlayer;
+                    spinEl.style.color = 'var(--text-gold)';
+                    spinEl.style.textShadow = '0 0 20px rgba(245,158,11,0.6)';
+
+                    setTimeout(() => {
+                        document.getElementById('spinContainer').style.display = 'none';
+                        const resultEl = document.getElementById('revealResult');
+                        resultEl.style.display = 'block';
+                        document.getElementById('winnerName').textContent = firstPlayer;
+
+                        // Show full order
+                        let orderHtml = '<strong>ลำดับการเล่น:</strong><br>';
+                        playerOrder.forEach((name, i) => {
+                            const emoji = i === 0 ? '👑' : `${i + 1}.`;
+                            orderHtml += `<span style="color: ${i === 0 ? 'var(--text-gold)' : 'var(--text-secondary)'};">${emoji} ${name}</span>  `;
+                        });
+                        document.getElementById('orderList').innerHTML = orderHtml;
+
+                        // Redirect after delay
+                        setTimeout(() => {
+                            window.location.href = 'game.php?id=' + gameId;
+                        }, 3000);
+                    }, 800);
+                }
+            }
+
+            setTimeout(doSpin, 500);
         }
 
         $(document).ready(function () {

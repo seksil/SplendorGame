@@ -36,14 +36,19 @@ try {
         throw new Exception("Only the host can start the game.");
     }
 
-    $stmt = $pdo->prepare("SELECT id FROM SpenderGame_players WHERE game_id = ? ORDER BY id ASC");
+    $stmt = $pdo->prepare("SELECT id, name FROM SpenderGame_players WHERE game_id = ? ORDER BY id ASC");
     $stmt->execute([$game_id]);
-    $players = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $players = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $player_count = count($players);
 
     if ($player_count < 2) {
         throw new Exception("Need at least 2 players to start.");
     }
+
+    // --- RANDOM TURN ORDER ---
+    shuffle($players);
+    $player_ids = array_column($players, 'id');
+    $player_names = array_column($players, 'name');
 
     // --- GAME INITIALIZATION LOGIC (Moved from init_game.php) ---
 
@@ -77,7 +82,7 @@ try {
         'decks' => $decks
     ];
 
-    $first_player_id = $players[0];
+    $first_player_id = $player_ids[0];
 
     // Update game status
     $stmt = $pdo->prepare("UPDATE SpenderGame_games SET status = 'active', turn_player_id = ?, tokens_available = ?, board_cards = ?, board_nobles = ? WHERE id = ?");
@@ -92,14 +97,18 @@ try {
     // Update player turn orders and initialize their assets
     $turn_order = 1;
     $empty_tokens = json_encode(['white' => 0, 'blue' => 0, 'green' => 0, 'red' => 0, 'black' => 0, 'gold' => 0]);
-    foreach ($players as $pid) {
+    foreach ($player_ids as $pid) {
         $stmt = $pdo->prepare("UPDATE SpenderGame_players SET tokens_owned = ?, cards_owned = '[]', cards_reserved = '[]', nobles_owned = '[]', turn_order = ? WHERE id = ?");
         $stmt->execute([$empty_tokens, $turn_order, $pid]);
         $turn_order++;
     }
 
     $pdo->commit();
-    jsonResponse(true, ['game_id' => $game_id], 'Game started.');
+    jsonResponse(true, [
+        'game_id' => $game_id,
+        'player_order' => $player_names,
+        'first_player' => $player_names[0]
+    ], 'Game started.');
 
 } catch (Exception $e) {
     if ($pdo->inTransaction())
