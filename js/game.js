@@ -83,7 +83,7 @@ function renderBoard(data) {
         for (let color in n.requirements) {
             reqHtml += `<div class="card-cost-dot token-${color}">${n.requirements[color]}</div>`;
         }
-        noblesHtml += `<div class="noble-spl anim-pop">
+        noblesHtml += `<div class="noble-spl anim-pop" onclick="handleNobleClick()" style="cursor:help;" title="วิธีได้ขุนนาง">
             <div class="noble-points">${n.points}</div>
             <div class="noble-req">${reqHtml}</div>
         </div>`;
@@ -322,6 +322,10 @@ function confirmTokens() {
 }
 
 // ===================== Card Actions =====================
+function handleNobleClick() {
+    if (typeof SoundEngine !== 'undefined') SoundEngine.click();
+    showToast('👑 แผ่นขุนนางด้านบน ไม่สามารถซื้อผ่าน Token ได้ จะมาหาคุณอัตโนมัติเมื่อสะสมการ์ดครบสีที่กำหนด', 'info');
+}
 function handleDeckClick(level) {
     if (parseInt(myPlayerId) !== 0 && parseInt(activePlayerId) !== parseInt(myPlayerId)) {
         showToast('ยังไม่ถึงตาคุณ!', 'warning');
