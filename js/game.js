@@ -37,12 +37,22 @@ function pollState() {
                 res.data.players.forEach(p => { currentIds[p.id] = p.name; });
 
                 // Check for players who left
+                let someoneLeft = false;
+                let leftName = '';
                 for (let id in knownPlayerNames) {
                     if (!currentIds[id]) {
-                        showToast(`⚠️ ${knownPlayerNames[id]} ออกจากเกมแล้ว`, 'warning');
+                        leftName = knownPlayerNames[id];
+                        someoneLeft = true;
+                        showToast(`⚠️ ${leftName} ออกจากเกมแล้ว`, 'warning');
                     }
                 }
                 knownPlayerNames = currentIds;
+
+                // If only 1 player remains, end the game
+                if (someoneLeft && res.data.players.length < 2) {
+                    showGameEndOverlay(leftName);
+                    return;
+                }
             }
 
             let stateChanged = JSON.stringify(gameState) !== JSON.stringify(res.data);
@@ -404,6 +414,28 @@ function showWinnerCelebration(winner) {
         </div>
     </div>`;
     document.body.appendChild(overlay);
+}
+
+// ===================== Game End (Player Left) =====================
+function showGameEndOverlay(playerName) {
+    const overlay = document.createElement('div');
+    overlay.className = 'winner-overlay';
+    overlay.innerHTML = `<div class="winner-card">
+        <div style="font-size: 3rem; margin-bottom: 10px;">🚪</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-gold); margin-bottom: 8px;">
+            ${playerName} ออกจากเกม
+        </div>
+        <div style="color: var(--text-secondary); margin-bottom: 20px;">
+            ไม่สามารถเล่นต่อได้ เกมจะจบลงอัตโนมัติ
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            <i class="bi bi-arrow-right-circle me-1"></i>
+            กำลังกลับหน้าหลัก<span class="waiting-dots"></span>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+
+    setTimeout(() => { window.location.href = 'index.php'; }, 4000);
 }
 
 // ===================== Init =====================
