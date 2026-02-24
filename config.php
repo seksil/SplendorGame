@@ -2,6 +2,8 @@
 // config.php
 session_start();
 
+define('APP_VERSION', '1.0.0');
+
 $host = '127.0.0.1';
 $db_user = 'root';
 $db_pass = '';

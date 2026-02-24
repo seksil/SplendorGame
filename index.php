@@ -260,6 +260,11 @@ require 'config.php';
                     <i class="bi bi-book me-1"></i> วิธีเล่นเกม
                 </button>
             </div>
+            
+            <!-- Version Number -->
+            <div class="text-center mt-3" style="color: rgba(255,255,255,0.2); font-size: 0.7rem;">
+                v<?php echo APP_VERSION; ?>
+            </div>
         </div>
     </div>
 
