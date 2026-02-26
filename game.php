@@ -139,13 +139,263 @@ if ($game_id <= 0) {
             .game-layout {
                 grid-template-columns: 1fr;
                 grid-template-rows: 1fr auto;
-                height: auto;
-                min-height: 100vh;
+                height: 100dvh;
+                min-height: 100dvh;
+                padding: 4px;
+                gap: 4px;
+                overflow: hidden;
             }
 
             html,
             body {
-                overflow: auto;
+                overflow: hidden !important;
+                height: 100dvh;
+                width: 100%;
+                position: fixed;
+            }
+
+            .board-area {
+                padding: 4px !important;
+                justify-content: space-evenly;
+            }
+
+            .sidebar-area {
+                padding: 6px !important;
+            }
+
+            .cards-grid {
+                gap: 4px;
+            }
+
+            .card-row {
+                gap: 4px;
+            }
+
+            .card-spl {
+                width: max(55px, 10vh) !important;
+                height: max(78px, 14vh) !important;
+                position: relative !important;
+            }
+
+            .card-points {
+                font-size: 0.95rem !important;
+            }
+
+            .deck-indicator {
+                width: max(45px, 8vh) !important;
+                height: max(60px, 11vh) !important;
+                margin-right: 4px !important;
+            }
+
+            .card-header-spl {
+                padding: 3px 5px !important;
+            }
+
+            .card-gem-icon {
+                width: 16px !important;
+                height: 16px !important;
+                font-size: 0.6rem !important;
+            }
+
+            .card-body-spl {
+                font-size: 1.2rem !important;
+                min-height: 0 !important;
+                flex: 1 1 auto;
+                opacity: 0.1 !important;
+                margin-bottom: 12px !important; /* give space for absolute bottom */
+            }
+
+            .card-cost-container {
+                position: absolute !important;
+                bottom: 2px !important;
+                left: 1px !important;
+                right: 1px !important;
+                padding: 1px !important;
+                gap: 2px !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: flex-start !important;
+            }
+
+            .card-cost {
+                gap: 1px !important;
+            }
+
+            .card-cost-dot {
+                width: 12px !important;
+                height: 12px !important;
+                font-size: 0.55rem !important;
+                margin: 0 !important;
+            }
+
+            .noble-spl {
+                width: max(45px, 8.5vh) !important;
+                height: max(45px, 8.5vh) !important;
+                margin: 2px !important;
+            }
+
+            .noble-points {
+                font-size: 0.8rem !important;
+                padding: 2px 4px !important;
+            }
+
+            .noble-req .card-cost-dot {
+                width: 10px !important;
+                height: 10px !important;
+                font-size: 0.45rem !important;
+            }
+
+            .token {
+                width: max(28px, 5vh) !important;
+                height: max(28px, 5vh) !important;
+                font-size: 0.75rem !important;
+                margin: 2px !important;
+                border-width: 1px !important;
+            }
+
+            .token .badge {
+                font-size: 0.6rem !important;
+                padding: 1px 4px !important;
+                bottom: -4px !important;
+                right: -4px !important;
+            }
+
+            .turn-indicator {
+                padding: 4px 8px !important;
+                margin-bottom: 2px !important;
+                font-size: 0.8rem !important;
+            }
+
+            .nobles-row {
+                padding: 2px 0 !important;
+                gap: 4px !important;
+            }
+
+            .tokens-bank {
+                padding: 4px !important;
+                gap: 4px !important;
+            }
+
+            .players-scroll {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                gap: 6px;
+                padding-right: 0;
+                padding-bottom: 4px;
+                align-items: stretch;
+            }
+
+            .player-tag {
+                flex: 0 0 auto;
+                min-width: 130px;
+                margin-bottom: 0 !important;
+                padding: 6px 8px !important;
+            }
+
+            .player-name {
+                font-size: 0.8rem !important;
+            }
+
+            .player-score {
+                font-size: 0.95rem !important;
+            }
+
+            .player-gem-mini {
+                padding: 1px 3px !important;
+                font-size: 0.6rem !important;
+                margin: 1px !important;
+            }
+
+            .player-gem-dot {
+                width: 8px !important;
+                height: 8px !important;
+            }
+
+            .sidebar-area>.mt-2.pt-2 {
+                margin-top: 4px !important;
+                padding-top: 4px !important;
+                display: flex;
+                gap: 6px;
+                align-items: center;
+            }
+
+            .sidebar-area>.mt-2.pt-2 .d-flex.gap-2.mb-2 {
+                margin-bottom: 0 !important;
+                flex: 1;
+                gap: 4px !important;
+            }
+
+            .sidebar-area>.mt-2.pt-2>button.btn-ruby {
+                width: auto !important;
+                flex: 0 0 auto;
+                padding: 4px 10px !important;
+                font-size: 0.75rem !important;
+            }
+
+            .btn-crystal {
+                padding: 4px 6px !important;
+                font-size: 0.75rem !important;
+            }
+
+            .reserved-mini {
+                width: 45px !important;
+                height: 60px !important;
+                position: relative !important;
+            }
+            
+            .rm-header {
+                padding: 2px 3px !important;
+                font-size: 0.6rem !important;
+            }
+
+            .rm-costs {
+                position: absolute !important;
+                bottom: 2px !important;
+                left: 1px !important;
+                right: 1px !important;
+                padding: 1px !important;
+                gap: 1px !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: flex-start !important;
+            }
+
+            .rm-cost-dot {
+                width: 10px !important;
+                height: 10px !important;
+                font-size: 0.45rem !important;
+                margin: 0 !important;
+            }
+
+            .action-panel {
+                padding: 6px 10px !important;
+                margin-top: 2px !important;
+            }
+
+            .action-panel button {
+                padding: 4px 10px !important;
+                font-size: 0.8rem !important;
+            }
+
+            .glass-panel-sm {
+                margin-top: 2px !important;
+            }
+
+            #scoreBadge {
+                font-size: 0.6rem !important;
+                padding: 2px 4px !important;
+            }
+
+            .sidebar-area h5 {
+                font-size: 0.8rem !important;
+                margin-bottom: 0 !important;
+            }
+
+            .sidebar-area .mb-3 {
+                margin-bottom: 4px !important;
             }
         }
     </style>
@@ -241,6 +491,9 @@ if ($game_id <= 0) {
             btn.querySelector('span').textContent = 'เสียง: ' + (on ? 'เปิด' : 'ปิด');
             btn.querySelector('i').className = 'bi ' + (on ? 'bi-volume-up' : 'bi-volume-mute') + ' me-1';
         }
+
+        // Visitor tracking
+        $.post('api/track_visit.php', { page: 'game' });
     </script>
 </body>
 

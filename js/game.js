@@ -160,7 +160,14 @@ function renderPlayers(data) {
     activePlayerId = parseInt(turnPlayerId);
     let playersHtml = '';
 
-    data.players.forEach((p, idx) => {
+    // Sort players: always show "me" first
+    const sortedPlayers = [...data.players].sort((a, b) => {
+        if (parseInt(a.id) === parseInt(myPlayerId)) return -1;
+        if (parseInt(b.id) === parseInt(myPlayerId)) return 1;
+        return 0;
+    });
+
+    sortedPlayers.forEach((p, idx) => {
         const isActive = parseInt(p.id) === parseInt(turnPlayerId);
         const totalTokens = Object.values(p.tokens_owned || {}).reduce((a, b) => a + b, 0);
 

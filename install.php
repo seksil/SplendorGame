@@ -48,6 +48,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
             FOREIGN KEY (game_id) REFERENCES SpenderGame_games(id) ON DELETE CASCADE
         )");
 
+        // Visitors tracking table
+        $pdo->exec("CREATE TABLE IF NOT EXISTS SpenderGame_visitors (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(45) NOT NULL,
+            user_agent VARCHAR(512) DEFAULT '',
+            page_visited VARCHAR(100) NOT NULL,
+            referrer VARCHAR(512) DEFAULT '',
+            session_id VARCHAR(100) DEFAULT '',
+            player_name VARCHAR(50) DEFAULT '',
+            visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_visited_at (visited_at),
+            INDEX idx_ip_page (ip_address, page_visited)
+        )");
+
         // Step 4: Write config.php
         $config_content = "<?php\n// config.php\nsession_start();\n\n\$host = '$db_host';\n\$db_user = '$db_user';\n\$db_pass = '$db_pass';\n\$db_name = '$db_name';\n\ntry {\n    \$pdo = new PDO(\"mysql:host=\$host;charset=utf8mb4\", \$db_user, \$db_pass);\n    \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);\n\n    // Select DB if it exists\n    \$stmt = \$pdo->query(\"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '\$db_name'\");\n    if (\$stmt->fetch()) {\n        \$pdo->query(\"USE \$db_name\");\n    }\n} catch (PDOException \$e) {\n    die(\"Database connection failed: \" . \$e->getMessage());\n}\n\n// Function to send JSON response\nfunction jsonResponse(\$success, \$data = [], \$message = '')\n{\n    header('Content-Type: application/json');\n    echo json_encode([\n        'success' => \$success,\n        'data' => \$data,\n        'message' => \$message\n    ]);\n    exit;\n}\n?>";
 

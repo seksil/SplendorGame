@@ -411,6 +411,9 @@ if ($player_id == 0) {
         $(document).ready(function () {
             pollLobby();
             setInterval(pollLobby, 1500);
+
+            // Visitor tracking
+            $.post('api/track_visit.php', { page: 'lobby' });
         });
     </script>
 </body>

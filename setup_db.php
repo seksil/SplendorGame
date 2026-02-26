@@ -37,6 +37,20 @@ try {
         FOREIGN KEY (game_id) REFERENCES SpenderGame_games(id) ON DELETE CASCADE
     )");
 
+    // Create visitors tracking table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS SpenderGame_visitors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ip_address VARCHAR(45) NOT NULL,
+        user_agent VARCHAR(512) DEFAULT '',
+        page_visited VARCHAR(100) NOT NULL,
+        referrer VARCHAR(512) DEFAULT '',
+        session_id VARCHAR(100) DEFAULT '',
+        player_name VARCHAR(50) DEFAULT '',
+        visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_visited_at (visited_at),
+        INDEX idx_ip_page (ip_address, page_visited)
+    )");
+
     echo "<h3>Database and tables created successfully!</h3>";
     echo "<p><a href='index.php'>Go to Game Lobby</a></p>";
 
